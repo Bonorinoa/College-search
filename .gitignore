@@ -6,8 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
-# streamlit
+# streamlit and venv
 .streamlit/
+collegeHack_venv/
 
 # Distribution / packaging
 .Python
