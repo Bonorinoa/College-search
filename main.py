@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from utils import load_llm
 
 openai_key = st.secrets['OPENAI_API_KEY']
 os.environ["OPENAI_API_KEY"] = openai_key
@@ -18,10 +19,9 @@ def main():
 
     # Call Google Scholar API to get results, then parse with chat
 
-    # Instead of printing it, this goes as input to LLM
-    llm_test = ChatOpenAI(model="gpt-3.5-turbo", 
-                          max_tokens=100)
-    
+    llm_test = load_llm(provider="openai", 
+                        max_tokens=100, 
+                        temperature=0.75)
     llm_response = llm_test.invoke(f"Create a google scholar search query to fetch papers relevant to the user interests: {user_input}")
     
     st.write(f'User input: {llm_response.content}')
