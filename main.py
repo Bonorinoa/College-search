@@ -1,8 +1,6 @@
 import streamlit as st
 import os
 
-from langchain_openai import ChatOpenAI
-
 openai_key = st.secrets['OPENAI_API_KEY']
 os.environ["OPENAI_API_KEY"] = openai_key
 
@@ -23,6 +21,7 @@ def main():
     # Instead of printing it, this goes as input to LLM
     llm_test = ChatOpenAI(model="gpt-3.5-turbo", 
                           max_tokens=100)
+    
     llm_response = llm_test.invoke(f"Create a google scholar search query to fetch papers relevant to the user interests: {user_input}")
     
     st.write(f'User input: {llm_response.content}')
