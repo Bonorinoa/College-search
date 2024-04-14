@@ -17,19 +17,19 @@ def fragment_function(parsed_data):
     # button to submit the choice
     if st.button("Submit"):
         with st.spinner("Fetching data..."):
-            #st.balloons()
+            # st.balloons()
 
             # user_choice is used here to fetch the data from the database or API
             ## We need information about the author from some public API
             ## Institution information can be fetched from the database
-            
+
             user_choice = user_choice.split(" --- ")
             author_name = user_choice[0]
             author_affiliation = user_choice[1]
-            
+
             st.dataframe(fetch_admissions_data(author_affiliation))
 
-            #st.write("Thank you for using the web app!")
+            # st.write("Thank you for using the web app!")
 
 
 def main():
