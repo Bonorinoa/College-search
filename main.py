@@ -6,6 +6,12 @@ from utils import *
 
 if "user_choice" not in st.session_state:
     st.session_state.user_choice = None
+    
+if "uni_data" not in st.session_state:
+    st.session_state.uni_data = None
+    
+if "author_profile" not in st.session_state:
+    st.session_state.author_profile = None
 
 # streamlit fragment functions
 @st.experimental_fragment
@@ -34,10 +40,10 @@ def fragment_function(author_profiles):
             # get profile for the author
             for author in author_profiles:
                 if author['name'] == author_name:
-                    author_profile = author
+                    st.session_state.author_profile = author
             
-            if author_profile is not None:
-                description = build_author_description(author_profile)
+            if st.session_state.author_profile is not None:
+                description = build_author_description(st.session_state.author_profile)
             
                 st.write(description)
                 
@@ -57,13 +63,12 @@ def build_university_profile():
             
             # get university data for selected affiliation
             uni_data = universities_data.loc[universities_data['INSTNM'] == university]
-            st.dataframe(uni_data)
+            st.session_state.uni_data = uni_data
                         
-            uni_description = build_university_description(uni_data)
+            uni_description = build_university_description(st.session_state.uni_data)
             
             st.write(uni_description)
-           
-            
+
 
 
 @st.experimental_fragment
@@ -93,6 +98,14 @@ def main():
 
     # get user's input (research interests)
     user_input = st.sidebar.text_area("Describe your research interests:", "...")
+    
+    if st.session_state.author_profile is not None:
+        email_sample = build_cold_email(st.session_state.author_profile)
+        print(email_sample)
+        st.sidebar.download_button("Download Email Sample", email_sample, 
+                           file_name=f"{st.session_state['user_choice']}_SampleEmail.txt", key="email_sample")
+            
+            
 
     # Instantiate the classes in the beginning
     search_scholar = SearchScholar()

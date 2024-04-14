@@ -86,6 +86,7 @@ class SearchScholar:
         author_profiles = [{
                             "name": "",
                             "affiliations": "",
+                            "website": "",
                             "interests": []
                             }]
         
@@ -104,6 +105,7 @@ class SearchScholar:
                 
                 author_profiles.append({
                     "name": author.get("name", "No Name Found"), # "name": "No Name Found
+                    "website": author_data.get("website", "No Website Found"), 
                     "affiliations": author_data.get("affiliations", "No Affiliation Found"),
                     "interests": author_data.get("interests", [])
                 })
@@ -158,18 +160,20 @@ class JSONParser:
     
     
 def build_author_description(author_profile):
-    llm = load_llm(max_tokens=100, 
+    llm = load_llm(max_tokens=250, 
                    temperature=0.75)
     
     prompt = f"""
             The following information contains the name of an author, interests, and their affiliations.\n\n
             
             Name: {author_profile['name']}\n
+            Website url: {author_profile['website']}\n
             Affiliations: {author_profile['affiliations']}\n
             Interests: {author_profile['interests']}\n\n
             
-            Please provide a brief description of the author's research interests and affiliations. 
-            The target audience are undergraduate and graduate students.
+            Please provide a detailed and factual (based on provided data) description of the author's research interests and affiliations. 
+            The target audience are undergraduate and graduate students looking to learn more about the author's research.
+            Include any links to the author's website.
             The description should be informative.
             """
             
@@ -179,8 +183,8 @@ def build_author_description(author_profile):
 
 
 def build_university_description(university_data):
-    llm = load_llm(max_tokens=150, 
-                   temperature=0.75)
+    llm = load_llm(max_tokens=450, 
+                   temperature=0.85)
     
     prompt = f"""
             The following information contains the name of a university, its admissions data, and other relevant information.\n\n
@@ -197,8 +201,8 @@ def build_university_description(university_data):
             Applicants in 2022: {university_data['APPLCN']}\n
             Admitted in 2022: {university_data['ADMSSN']}\n\n
             
-            Please provide a brief description of the university's admissions data and other relevant information.
-            The target audience are undergraduate and graduate students.
+            Please provide a detailed and factual (based on provided data) description of the university.
+            The target audience are undergraduate and graduate students looking to learn about admissions criteria and relevant links.
             The description should be informative and copmrehensive.
             """
             
@@ -206,6 +210,31 @@ def build_university_description(university_data):
     
     return description.content
 
+
+def build_cold_email(author_profile):
+    llm = load_llm(max_tokens=450, 
+                   temperature=0.85)
+    
+    prompt = f"""
+            Please write the structure for a cold email to the following researcher\n\n
+            
+            Name: {author_profile['name']}\n
+            Affiliations: {author_profile['affiliations']}\n
+            Interests: {author_profile['interests']}\n\n
+            
+            The email should be professional and concise, yet enthusiastic.
+            Show that you have done your research on the author's work and that you are interested in learning more about the research.
+            Do not assume the gender of the author.
+            
+            ------
+            
+            Once you have written the email, please provide a list of three questions you would ask the author in a follow-up email.
+            Finally provide a list of three helpful reminders (e.g., to thank the author for their time, to read their work before writing the email, and to look for their email on the website). )
+        """
+        
+    email = llm.invoke(prompt)
+    
+    return email.content
 
 # Function to fetch university admissions data from the database
 ## should take in the institution chosen by the user and return the university admissions data
@@ -251,7 +280,7 @@ def fetch_admissions_state_data(institution):
             institutions_state_data["INSTNM"].tolist(), institution
         )
 
-        st.write("The 3 universities with the highest similarity are: ")
+        #st.write("The 3 universities with the highest similarity are: ")
 
         # build dataframe for top 3 universities
         universities_data = pd.DataFrame()
