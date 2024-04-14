@@ -60,37 +60,32 @@ def main():
     # get user's input (research interests)
     user_input = st.sidebar.text_area("Describe your research interests:", "...")
 
-    # Instantiate the search_scholar class for later uses
+    # Instantiate the classes in the beginning
     search_scholar = SearchScholar()
+    json_parser = JSONParser()
 
     if len(user_input) > 5:
 
         # user user input to fetch google scholar papers
         with st.spinner("Fetching papers..."):
-            sleep(2)
             # Perform a query search
             results, organic_results = search_scholar.query(user_input)
 
         # get papers with key "authors"
         with st.spinner("Fetching authors..."):
-            sleep(2)
-            authors_json = extract_author_json2(organic_results)
+            authors_json = json_parser.extract_author_json(organic_results)
             st.success("Authors fetched successfully!")
 
         # find authors' google scholar profiles
         with st.spinner("Fetching authors' profiles..."):
             authors_info = search_scholar.user(authors_json)
-            sleep(2)
-
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
         with st.spinner("Parsing authors' profiles..."):
-            authors_list = author_json_to_list(
+            authors_list = json_parser.author_json_to_list(
                 authors_info
             )  # pairs of author-insitution
-            sleep(2)
-
             st.success("Authors' profiles parsed successfully!")
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT

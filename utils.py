@@ -29,9 +29,7 @@ os.environ["SERP_API_KEY"] = st.secrets["SERP_API_KEY"]
 # TODO: Populate placeholder functions with actual code
 
 
-def load_llm(provider="openai", 
-             max_tokens=100, 
-             temperature=0.5):
+def load_llm(provider="openai", max_tokens=100, temperature=0.5):
     """
     Load the language model from the specified provider.
     Openai loads gpt-3.5-turbo by default.
@@ -101,6 +99,9 @@ class SearchScholar:
                 author["affiliations"] = author_data.get(
                     "affiliations", "No Affiliation Found"
                 )
+                # Extracting interests (could be multiple)
+                interests = author_data.get("interests", [])
+                author["interests"] = [interest["title"] for interest in interests]
             except Exception as e:
                 print(f"Failed to fetch information for author {author['name']}: {e}")
                 author["affiliations"] = "No profile found"
@@ -115,14 +116,19 @@ class JSONParser:
     def __init__(self):
         pass
 
+    # Function to get author information from the JSON data
+    ## will still return json, but just of the authors
     def extract_author_json(self, json_data):
         authors_info = []
 
+        # Iterate through each paper
         for entry in json_data:
             publication_info = entry.get("publication_info", {})
             authors = publication_info.get("authors", [])
 
+            # Iterate through each author in the paper
             for author in authors:
+                # Desired information to extract
                 author_details = {
                     "name": author.get("name", "No Name Provided"),
                     "link": author.get("link", "No Link Provided"),
@@ -131,59 +137,24 @@ class JSONParser:
                     ),
                     "author_id": author.get("author_id", "No Author ID Provided"),
                 }
+                # Add author info
                 authors_info.append(author_details)
 
         return authors_info
 
-    def author_json_to_list(self, authors_list):
+    # Function to parse authors' informatin from the JSON data
+    ## should return a list of strings that can be displayed in the dropdown menu
+    @staticmethod
+    @st.cache_data
+    def author_json_to_list(authors_list):
         formatted_list = []
 
+        # Iterate through authors for name, affliation, and research interests
         for author in authors_list:
             formatted_str = f"{author['name']} --- {author['affiliations']}"
             formatted_list.append(formatted_str)
 
         return formatted_list
-
-
-# Function to get author information from the JSON data
-## will still return json, but just of the authors
-def extract_author_json2(json_data):
-    # Initialize a list to hold the authors' information
-    authors_info = []
-
-    # Go through each part of the json data
-    for entry in json_data:
-        # Check if 'publication_info' and 'authors' keys exist
-        publication_info = entry.get("publication_info", {})
-        authors = publication_info.get("authors", [])
-
-        # Iterate through each author in the 'authors' list
-        for author in authors:
-            # Extract the desired information
-            author_details = {
-                "name": author.get("name", "No Name Provided"),
-                "link": author.get("link", "No Link Provided"),
-                "serpapi_scholar_link": author.get(
-                    "serpapi_scholar_link", "No SerpApi Link Provided"
-                ),
-                "author_id": author.get("author_id", "No Author ID Provided"),
-            }
-            # Add the extracted details to the authors_info list
-            authors_info.append(author_details)
-
-    return authors_info
-
-
-# Function to parse authors' institutions and research interests
-## should return a list of strings that can be displayed in the dropdown menu
-def author_json_to_list(authors_list):
-    formatted_list = []
-
-    for author in authors_list:
-        formatted_str = f"{author['name']} --- {author['affiliations']}"
-        formatted_list.append(formatted_str)
-
-    return formatted_list
 
 
 # Function to fetch university admissions data from the database
@@ -197,7 +168,7 @@ def load_admissions_data():
 
 def extract_state_universities(institution):
     llm = load_llm(max_tokens=15, temperature=0.5)
-    
+
     prompt = f"""
             The following string contains the name of an accredited university. 
             Extract the name of the university from the string, if it is abbreviated please expand it to match the legal name: 
@@ -208,7 +179,7 @@ def extract_state_universities(institution):
             
             STABBR: 
         """
-    
+
     state = llm.invoke(prompt)
 
     return state.content
@@ -223,62 +194,14 @@ def fetch_admissions_state_data(institution):
 
     # Filter the data based on the selected institution
     try:
-        institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
-        
-        university = find_university(institutions_state_data["INSTNM"].tolist(), institution)
-        
-        st.write("The university with the highest cosine similarity is:", university)
-        
-        university_data = get_university_data(university)
-        
-        #st.warning("No universities found in our database for the identifies state.")
-        
-    except Exception as e:
-        st.warning(f"We couldn't find schools in this state: {e}")
-        
-
-    return university_data
-
-def find_university(state_data, author_institution):
-    '''
-    Takes in the list of universities in a state and returns the university with the highest cosine similarity with the author's institution.
-    inputs:
-        state_data: list of universities in a state
-        author_institution: institution of the author
-    outputs:
-        university: the university with the highest cosine similarity with the author's institution
-    '''
-    
-    # Creating the TF-IDF Vectorizer
-    vectorizer = TfidfVectorizer()
-
-    # Including the author's institution in the list for vectorization
-    all_text = state_data + [author_institution]
-
-    # Transforming the text to TF-IDF vectors
-    tfidf_matrix = vectorizer.fit_transform(all_text)
-
-    # Calculating cosine similarity between the author's institution and all universities in the state
-    # The last entry in tfidf_matrix is the author's institution
-    cosine_similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
-
-    # Finding the index of the maximum cosine similarity score
-    max_index = np.argmax(cosine_similarities)
-
-    # Returning the university with the highest cosine similarity
-    return state_data[max_index]
-    
-    
-
-def get_university_data(university):
-    # Load the admissions data
-    admissions_data = load_admissions_data()
-
-    # Filter the data based on the selected institution
-    try:
-        university_data = admissions_data[admissions_data["INSTNM"] == university]
+        institution_data = admissions_data[admissions_data["STABBR"] == state]
+        if institution_data.empty:
+            st.warning("No data found for the selected institution.")
+            university = st.text_input("Enter the name of the institution to fetch the data:")
+            institution_data = admissions_data[admissions_data["INSTNM"] == university]
         
     except Exception as e:
         st.warning(f"We couldn't fetch your school: {e}")
         
-    return university_data
+
+    return institution_data
