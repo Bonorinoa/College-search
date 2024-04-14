@@ -56,21 +56,17 @@ def main():
 
         # user user input to fetch google scholar papers
         with st.spinner("Fetching papers..."):
-            sleep(2)
             # Perform a query search
             results, organic_results = search_scholar.query(user_input)
 
         # get papers with key "authors"
         with st.spinner("Fetching authors..."):
-            sleep(2)
             authors_json = json_parser.extract_author_json(organic_results)
             st.success("Authors fetched successfully!")
 
         # find authors' google scholar profiles
         with st.spinner("Fetching authors' profiles..."):
             authors_info = search_scholar.user(authors_json)
-            sleep(2)
-
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
@@ -78,8 +74,6 @@ def main():
             authors_list = json_parser.author_json_to_list(
                 authors_info
             )  # pairs of author-insitution
-            sleep(2)
-
             st.success("Authors' profiles parsed successfully!")
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
