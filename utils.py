@@ -60,14 +60,12 @@ def load_llm(provider="openai", max_tokens=100, temperature=0.5):
 ## returns JSON objects
 class SearchScholar:
     def __init__(self):
-        self.api_key = os.getenv("SERP_API_KEY")
-        if not self.api_key:
-            raise ValueError("SERP_API_KEY is not set in environment variables.")
+        pass
 
     def query(self, query, as_ylo=2018, as_yhi=2024, start=0, num=10):
         params = {
             "engine": "google_scholar",
-            "api_key": self.api_key,
+            "api_key": os.getenv("SERP_API_KEY"),
             "q": query,
             "as_ylo": as_ylo,
             "as_yhi": as_yhi,
@@ -87,7 +85,7 @@ class SearchScholar:
         for author in authors_info:
             params = {
                 "engine": "google_scholar_author",
-                "api_key": self.api_key,
+                "api_key": os.getenv("SERP_API_KEY"),
                 "author_id": author["author_id"],
                 "output": "json",
             }
@@ -144,9 +142,9 @@ class JSONParser:
 
     # Function to parse authors' information from the JSON data
     ## should add a string description for each author that can be displayed in the dropdown menu
-    @staticmethod
-    @st.cache_data
-    def author_string(authors_info):
+    # @staticmethod
+    # @st.cache_data
+    def author_string(self, authors_info):
         # Iterate through authors to add a 'parsed_string' trait
         for author in authors_info:
             formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
@@ -157,7 +155,7 @@ class JSONParser:
 
 # Function to fetch university admissions data from the database
 ## should take in the institution chosen by the user and return the university admissions data
-@st.cache_data
+# @st.cache_data
 def load_admissions_data():
     # Load the admissions data from the database
     admissions_data = pd.read_csv("data/Merged_Admissions_Data.csv")
@@ -169,8 +167,7 @@ def extract_state_universities(institution):
     llm = load_llm(max_tokens=15, temperature=0.5)
 
     prompt = f"""
-            The following string contains the name of an accredited university. 
-            Extract the name of the university from the string, if it is abbreviated please expand it to match the legal name: 
+            The following string contains the name of an accredited university.
             
             {institution}
             
@@ -189,15 +186,15 @@ def fetch_admissions_state_data(institution):
     admissions_data = load_admissions_data()
 
     state = extract_state_universities(institution)
-
-    st.write("The extracted state is:", state)
+    st.write("The extracted state is:", repr(state))
 
     # Filter the data based on the selected institution
     try:
         institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
 
-
-        top3_universities = find_university(institutions_state_data["INSTNM"].tolist(), institution)
+        top3_universities = find_university(
+            institutions_state_data["INSTNM"].tolist(), institution
+        )
 
         st.write("The 3 universities with the highest cosine similarity are: ")
 
@@ -213,7 +210,6 @@ def fetch_admissions_state_data(institution):
         st.warning(f"We couldn't find schools in this state: {e}")
 
     return universities_data
-
 
 
 def find_university(state_data, author_institution):
@@ -241,7 +237,7 @@ def find_university(state_data, author_institution):
 
     # get the indices for the top three cosine similarities
     top_indices = cosine_similarities.argsort()[0][::-1][:3]
-    
+
     # filter state data to get the top three universities
     top_universities = [state_data[i] for i in top_indices]
 

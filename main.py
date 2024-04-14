@@ -1,5 +1,6 @@
 import streamlit as st
 from time import sleep
+import re
 
 from utils import *
 
@@ -32,14 +33,13 @@ def fragment_function(authors_info):
 
             st.write(f"Chosen author: {chosen_author}")
 
-            author_affiliation = chosen_author.get(
-                "affiliations", "No Affiliation Found"
-            )
+            author_affiliation = user_choice.split(" --- ")[1]
+            author_affiliation = re.sub(r"\s+", " ", author_affiliation).strip()
+            st.write(f"Author affiliation: {author_affiliation}")
 
             universities_data = fetch_admissions_state_data(author_affiliation)
-           
+
             st.dataframe(universities_data)
-            
 
 
 @st.experimental_fragment
