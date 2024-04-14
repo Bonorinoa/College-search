@@ -196,11 +196,15 @@ def fetch_admissions_state_data(institution):
     try:
         institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
 
-        university = find_university(institutions_state_data["INSTNM"].tolist(), institution)
+        top3_universities = find_university(institutions_state_data["INSTNM"].tolist(), institution)
 
-        st.write("The university with the highest cosine similarity is:", university)
+        st.write("The 3 universities with the highest cosine similarity are: ")
 
-        university_data = get_university_data(university)
+        # build dataframe for top 3 universities
+        universities_data = pd.DataFrame()
+        for university in top3_universities:
+            university_data = get_university_data(university)
+            universities_data = pd.concat([universities_data, university_data])
 
         #st.warning("No universities found in our database for the identifies state.")
 
@@ -208,7 +212,7 @@ def fetch_admissions_state_data(institution):
         st.warning(f"We couldn't find schools in this state: {e}")
 
 
-    return university_data
+    return universities_data
 
 def find_university(state_data, author_institution):
     '''
@@ -233,11 +237,14 @@ def find_university(state_data, author_institution):
     # The last entry in tfidf_matrix is the author's institution
     cosine_similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
 
-    # Finding the index of the maximum cosine similarity score
-    max_index = np.argmax(cosine_similarities)
+    # get the indices for the top three cosine similarities
+    top_indices = cosine_similarities.argsort()[0][::-1][:3]
+    
+    # filter state data to get the top three universities
+    top_universities = [state_data[i] for i in top_indices]
 
     # Returning the university with the highest cosine similarity
-    return state_data[max_index]
+    return top_universities
 
 def get_university_data(university):
     # Load the admissions data

@@ -27,9 +27,9 @@ def fragment_function(parsed_data):
             author_name = user_choice[0]
             author_affiliation = user_choice[1]
 
-            university_data = fetch_admissions_state_data(author_affiliation)
+            universities_data = fetch_admissions_state_data(author_affiliation)
            
-            st.dataframe(university_data)
+            st.dataframe(universities_data)
             
             # st.write("Thank you for using the web app!")
 
