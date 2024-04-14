@@ -30,7 +30,7 @@ def main():
 
     # streamlit state variables
 
-    st.title("Hello - 5C Hachathon")
+    st.title("Hello - 5C Hackathon")
     st.write(
         "This is a simple web app to demonstrate the deployment of a machine learning model using Streamlit."
     )
@@ -42,24 +42,16 @@ def main():
     # get user's input (research interests)
     user_input = st.sidebar.text_area("Describe your research interests:", "...")
 
+    # Instantiate the search_scholar class for later uses
+    search_scholar = SearchScholar()
+
     if len(user_input) > 5:
 
         # user user input to fetch google scholar papers
         with st.spinner("Fetching papers..."):
             sleep(2)
-            params = {
-                "engine": "google_scholar",
-                "q": "economics",
-                "api_key": "fd23ce638a33f2d7c389b61c690b2030f01e495863180a77f5f47ba043065058",
-                "as_ylo": 2018,
-                "as_yhi": 2024,
-                "hl": "en",
-                "start": 0,
-                "num": 10,  # limited to 20
-                "output": "json",
-            }
-            results, organic_results = search_scholar(params)
-            st.success("Results fetched successfully!")
+            # Perform a query search
+            results, organic_results = search_scholar.query(user_input)
 
         # get papers with key "authors"
         with st.spinner("Fetching authors..."):
@@ -69,14 +61,16 @@ def main():
 
         # find authors' google scholar profiles
         with st.spinner("Fetching authors' profiles..."):
-            authors_info = search_scholar_author(authors_json)
+            authors_info = search_scholar.user(authors_json)
             sleep(2)
 
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
         with st.spinner("Parsing authors' profiles..."):
-            authors_list = author_json_to_list(authors_info)
+            authors_list = author_json_to_list(
+                authors_info
+            )  # pairs of author-insitution
             sleep(2)
 
             st.success("Authors' profiles parsed successfully!")
@@ -85,16 +79,10 @@ def main():
 
         # create list of strings to display in dropdown
         ## could be pairs of author-institution
-        # parsed_data = [
-        #     "Author 1 - Institution 1",
-        #     "Author 2 - Institution 2",
-        #     "Author 3 - Institution 3",
-        # ]
-        parsed_data = authors_list
 
         st.markdown("---")
 
-        fragment_function(parsed_data)
+        fragment_function(authors_list)
 
 
 if __name__ == "__main__":
