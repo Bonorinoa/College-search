@@ -57,6 +57,9 @@ def build_university_profile():
             # dataframe
             universities_data = fetch_admissions_state_data(author_affiliation)
             
+            st.write("Top 3 matches:")
+            st.dataframe(universities_data)
+            
             university = find_university(universities_data["INSTNM"].tolist(), author_affiliation)[0]
             
             st.write(f"Selected University: {university}")
