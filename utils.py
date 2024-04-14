@@ -160,22 +160,34 @@ def load_admissions_data():
     return admissions_data
 
 
+def extract_university(institution):
+    llm = load_llm(max_tokens=15, temperature=0.5)
+
+    prompt = f"""
+            The following string contains the name of an accredited university. 
+            Extract the name of the university from the string, if it is abbreviated please expand it to match the legal name: 
+            
+            {institution}
+            
+            Return the state where the university is located in two-letter format (i.e., Washington = WA, or Virginia = VA).
+        """
+
+    state = llm.invoke(prompt)
+
+    return state.content
+
+
 def fetch_admissions_data(institution):
     # Load the admissions data
     admissions_data = load_admissions_data()
 
-    llm = load_llm()
-    university = llm.invoke(
-        f"The following string contains the name of an accredited university. Extract the name of the university from the string, if it is abbreviated please expand it to match the legal name: {institution}"
-    )
+    state = extract_university(institution)
 
-    st.write("The extracted university is:", university.content)
+    st.write("The extracted state is:", state)
 
     # Filter the data based on the selected institution
     try:
-        institution_data = admissions_data[
-            admissions_data["INSTNM"] == university.content
-        ]
+        institution_data = admissions_data[admissions_data["STABBR"] == state]
         if institution_data.empty:
             st.warning("No data found for the selected institution.")
             university = st.text_input(
