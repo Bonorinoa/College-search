@@ -4,3 +4,4 @@ langchain-community
 google-search-results
 html2text
 bs4
+scikit-learn

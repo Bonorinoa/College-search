@@ -15,7 +15,7 @@ def fragment_function(parsed_data):
     st.write(f"User choice: {user_choice}")
 
     # button to submit the choice
-    if st.button("Submit"):
+    if st.button("Get univesities in state"):
         with st.spinner("Fetching data..."):
             # st.balloons()
 
@@ -27,10 +27,22 @@ def fragment_function(parsed_data):
             author_name = user_choice[0]
             author_affiliation = user_choice[1]
 
-            st.dataframe(fetch_admissions_data(author_affiliation))
-
+            university_data = fetch_admissions_state_data(author_affiliation)
+           
+            st.dataframe(university_data)
+            
             # st.write("Thank you for using the web app!")
 
+@st.experimental_fragment
+def fetch_institution_data():
+    
+    university = st.text_input("Enter the name of the institution to fetch the data:")
+    
+    if st.button("Get univesity admissions data"):
+        with st.spinner("Fetching data..."):
+        
+            uni_data = get_university_data(university)
+            st.dataframe(uni_data)
 
 def main():
 
@@ -89,6 +101,8 @@ def main():
         st.markdown("---")
 
         fragment_function(authors_list)
+        
+        #fetch_institution_data()
 
 
 if __name__ == "__main__":
