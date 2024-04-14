@@ -12,7 +12,7 @@ To run this application follow the following steps:
 
 ## Demo
 
-![Demo recording](https://vimeo.com/934532333?share=copy)
+[Demo recording](https://vimeo.com/934532333?share=copy)
 
 ## Next steps
 
