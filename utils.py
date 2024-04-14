@@ -82,14 +82,11 @@ class SearchScholar:
         return results, organic_results
 
     def author_profiles(self, authors_info):
-        
-        author_profiles = [{
-                            "name": "",
-                            "affiliations": "",
-                            "website": "",
-                            "interests": []
-                            }]
-        
+
+        author_profiles = [
+            {"name": "", "affiliations": "", "website": "", "interests": []}
+        ]
+
         for author in authors_info:
             params = {
                 "engine": "google_scholar_author",
@@ -102,14 +99,20 @@ class SearchScholar:
                 search = GoogleSearch(params)
                 results = search.get_dict()
                 author_data = results.get("author", {})
-                
-                author_profiles.append({
-                    "name": author.get("name", "No Name Found"), # "name": "No Name Found
-                    "website": author_data.get("website", "No Website Found"), 
-                    "affiliations": author_data.get("affiliations", "No Affiliation Found"),
-                    "interests": author_data.get("interests", [])
-                })
-                
+
+                author_profiles.append(
+                    {
+                        "name": author.get(
+                            "name", "No Name Found"
+                        ),  # "name": "No Name Found
+                        "website": author_data.get("website", "No Website Found"),
+                        "affiliations": author_data.get(
+                            "affiliations", "No Affiliation Found"
+                        ),
+                        "interests": author_data.get("interests", []),
+                    }
+                )
+
             except Exception as e:
                 st.warning(f"Couldn't fetch author's profile: {e}")
 
@@ -126,26 +129,26 @@ class JSONParser:
     # Function to get author information from the JSON data
     ## will still return json, but just of the authors
     def extract_authors(self, json_data):
-        authors_info = [{
-                            "name": "",
-                            "author_id": ""
-                        }]
+        authors_info = [{"name": "", "author_id": ""}]
 
         # Iterate through each paper
         for entry in json_data:
-            
-            authors = entry.get('publication_info', "No publications").get("authors", "no authors")
-        
+
+            authors = entry.get("publication_info", "No publications").get(
+                "authors", "no authors"
+            )
+
             if authors != "no authors":
                 for author in authors[:2]:
-                    authors_info.append({
-                        "name": author.get("name", "No Name Found"),
-                        "author_id": author.get("author_id", "No ID Found")
-                    })
-                    
-        return authors_info   
-        
-        
+                    authors_info.append(
+                        {
+                            "name": author.get("name", "No Name Found"),
+                            "author_id": author.get("author_id", "No ID Found"),
+                        }
+                    )
+
+        return authors_info
+
     # Function to parse authors' information from the JSON data
     ## should add a string description for each author that can be displayed in the dropdown menu
     # @staticmethod
@@ -154,15 +157,14 @@ class JSONParser:
         # Iterate through authors to add a 'parsed_string' trait
         for author in author_profiles:
             formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
-            #author["parsed_string"] = formatted_str
+            # author["parsed_string"] = formatted_str
 
         return formatted_str
-    
-    
+
+
 def build_author_description(author_profile):
-    llm = load_llm(max_tokens=250, 
-                   temperature=0.75)
-    
+    llm = load_llm(max_tokens=250, temperature=0.75)
+
     prompt = f"""
             The following information contains the name of an author, interests, and their affiliations.\n\n
             
@@ -176,16 +178,15 @@ def build_author_description(author_profile):
             Include any links to the author's website.
             The description should be informative.
             """
-            
+
     description = llm.invoke(prompt)
-    
+
     return description.content
 
 
 def build_university_description(university_data):
-    llm = load_llm(max_tokens=450, 
-                   temperature=0.85)
-    
+    llm = load_llm(max_tokens=450, temperature=0.85)
+
     prompt = f"""
             The following information contains the name of a university, its admissions data, and other relevant information.\n\n
             
@@ -205,16 +206,15 @@ def build_university_description(university_data):
             The target audience are undergraduate and graduate students looking to learn about admissions criteria and relevant links.
             The description should be informative and copmrehensive.
             """
-            
+
     description = llm.invoke(prompt)
-    
+
     return description.content
 
 
 def build_cold_email(author_profile):
-    llm = load_llm(max_tokens=450, 
-                   temperature=0.85)
-    
+    llm = load_llm(max_tokens=450, temperature=0.85)
+
     prompt = f"""
             Please write the structure for a cold email to the following researcher\n\n
             
@@ -231,10 +231,11 @@ def build_cold_email(author_profile):
             Once you have written the email, please provide a list of three questions you would ask the author in a follow-up email.
             Finally provide a list of three helpful reminders (e.g., to thank the author for their time, to read their work before writing the email, and to look for their email on the website). )
         """
-        
+
     email = llm.invoke(prompt)
-    
+
     return email.content
+
 
 # Function to fetch university admissions data from the database
 ## should take in the institution chosen by the user and return the university admissions data
@@ -247,8 +248,7 @@ def load_admissions_data():
 
 
 def extract_state_universities(institution):
-    llm = load_llm(max_tokens=2, 
-                   temperature=0.5)
+    llm = load_llm(max_tokens=2, temperature=0.5)
 
     prompt = f"""
             The following string contains the name of an accredited university.
@@ -270,28 +270,24 @@ def fetch_admissions_state_data(institution):
     admissions_data = load_admissions_data()
 
     state = extract_state_universities(institution)
-    # st.write("The extracted state is:", repr(state))
+    print("The extracted state is:", repr(state))
 
-    # Filter the data based on the selected institution
-    try:
-        institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
+    # Determine which list to use based on the existence of the state
+    if state in admissions_data["STABBR"].values:
+        institutions_list = admissions_data[admissions_data["STABBR"] == state][
+            "INSTNM"
+        ].tolist()
+    else:
+        institutions_list = admissions_data["INSTNM"].tolist()
 
-        top3_universities = find_university(
-            institutions_state_data["INSTNM"].tolist(), institution
-        )
+    # Find top 3 similarity
+    top3_universities = find_university(institutions_list, institution)
 
-        #st.write("The 3 universities with the highest similarity are: ")
-
-        # build dataframe for top 3 universities
-        universities_data = pd.DataFrame()
-        for university in top3_universities:
-            university_data = get_university_data(university)
-            universities_data = pd.concat([universities_data, university_data])
-
-        # st.warning("No universities found in our database for the identifies state.")
-
-    except Exception as e:
-        st.warning(f"We couldn't find schools in this state: {e}")
+    # Build dataframe for top 3 universities
+    universities_data = pd.DataFrame()
+    for university in top3_universities:
+        university_data = get_university_data(university)
+        universities_data = pd.concat([universities_data, university_data])
 
     return universities_data
 
