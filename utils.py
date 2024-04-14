@@ -21,7 +21,7 @@ os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 os.environ["SERP_API_KEY"] = st.secrets["SERP_API_KEY"]
 
 
-#TODO: Populate placeholder functions with actual code 
+# TODO: Populate placeholder functions with actual code
 
 
 def load_llm(provider="openai", max_tokens=100, temperature=0.5):
@@ -48,19 +48,92 @@ def load_llm(provider="openai", max_tokens=100, temperature=0.5):
 
     return llm
 
+
 # Function to fetch google scholar papers
 ## should return a list of JSON objects that have the key "authors"
+def search_scholar(params):
 
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    organic_results = results["organic_results"]
+
+    return results, organic_results
 
 
 # Function to fetch the authors' google scholar profiles
 ## should return a list of JSON objects that we can parse to get the authors' institutions and research interests
+def extract_author_json2(json_data):
+    # Initialize a list to hold the authors' information
+    authors_info = []
+
+    # Go through each part of the json data
+    for entry in json_data:
+        # Check if 'publication_info' and 'authors' keys exist
+        publication_info = entry.get("publication_info", {})
+        authors = publication_info.get("authors", [])
+
+        # Iterate through each author in the 'authors' list
+        for author in authors:
+            # Extract the desired information
+            author_details = {
+                "name": author.get("name", "No Name Provided"),
+                "link": author.get("link", "No Link Provided"),
+                "serpapi_scholar_link": author.get(
+                    "serpapi_scholar_link", "No SerpApi Link Provided"
+                ),
+                "author_id": author.get("author_id", "No Author ID Provided"),
+            }
+            # Add the extracted details to the authors_info list
+            authors_info.append(author_details)
+
+    return authors_info
 
 
+def search_scholar_author(authors_list):
+    api_key = os.getenv("SERP_API_KEY")
+    if not api_key:
+        raise ValueError("SERP_API_KEY is not set in environment variables.")
 
-# Function to parse authors' institutions and research interests 
+    for author in authors_list:
+        params = {
+            "engine": "google_scholar_author",
+            "author_id": author["author_id"],
+            "api_key": api_key,
+        }
+
+        try:
+            search = GoogleSearch(params)
+            results = search.get_dict()
+
+            # Accessing 'author' key from the results based on the provided structure
+            author_data = results.get("author", {})
+            # print(author_data)
+
+            # Extracting 'affiliations' from the author_data (maybe email later)
+            author["affiliations"] = author_data.get(
+                "affiliations", "No Affiliation Found"
+            )
+
+        except Exception as e:
+            print(f"Failed to fetch information for author {author['name']}: {e}")
+            # Set default values in case of failure to fetch data
+            author["affiliations"] = "No profile found"
+
+    return authors_list
+
+
+# Function to parse authors' institutions and research interests
 ## should return a list of strings that can be displayed in the dropdown menu
 
+
+def author_json_to_list(authors_list):
+    formatted_list = []
+
+    for author in authors_list:
+        formatted_str = f"{author['name']} --- {author['affiliations']}"
+        formatted_list.append(formatted_str)
+
+    return formatted_list
 
 
 # Function to fetch university admissions data from the database
