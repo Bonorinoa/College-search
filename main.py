@@ -6,22 +6,27 @@ from utils import *
 
 if "user_choice" not in st.session_state:
     st.session_state.user_choice = None
-    
+
 if "uni_data" not in st.session_state:
     st.session_state.uni_data = None
-    
+
 if "author_profile" not in st.session_state:
     st.session_state.author_profile = None
+
 
 # streamlit fragment functions
 @st.experimental_fragment
 def fragment_function(author_profiles):
     # dropdown is populated with the parsed data
     st.markdown("## Select the author-institution pair")
-    
+
+    # st.write(author_profiles)
+
     pairs = []
     for author in author_profiles:
-        formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
+        formatted_str = (
+            f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
+        )
         pairs.append(formatted_str)
 
     user_choice = st.selectbox("Author-Institution Pair", pairs)
@@ -36,42 +41,55 @@ def fragment_function(author_profiles):
 
             # map the user choice to the author
             author_name = user_choice.split(" --- ")[0]
-            
+
             # get profile for the author
             for author in author_profiles:
-                if author['name'] == author_name:
+                if author["name"] == author_name:
                     st.session_state.author_profile = author
-            
+
             if st.session_state.author_profile is not None:
                 description = build_author_description(st.session_state.author_profile)
-            
+
                 st.write(description)
-                
+
+
 def build_university_profile():
-    
+
     if st.button("Show University Data"):
-        
+
         with st.spinner("Fetching data..."):
             author_affiliation = st.session_state.user_choice.split(" --- ")[1]
-    
-            # dataframe
-            universities_data = fetch_admissions_state_data(author_affiliation)
-            
-            st.write("Top 3 matches:")
-            st.dataframe(universities_data)
-            
-            university = find_university(universities_data["INSTNM"].tolist(), author_affiliation)[0]
-            
-            st.write(f"Selected University: {university}")
-            
-            # get university data for selected affiliation
-            uni_data = universities_data.loc[universities_data['INSTNM'] == university]
-            st.session_state.uni_data = uni_data
-                        
-            uni_description = build_university_description(st.session_state.uni_data)
-            
-            st.write(uni_description)
 
+            # dataframe
+            universities_data, institution = fetch_admissions_state_data(
+                author_affiliation
+            )
+
+            if universities_data:
+                st.write("Top 3 matches:")
+                st.dataframe(universities_data)
+
+                university = find_university(
+                    universities_data["INSTNM"].tolist(), author_affiliation
+                )[0]
+
+                st.write(f"Selected University: {university}")
+
+                # get university data for selected affiliation
+                uni_data = universities_data.loc[
+                    universities_data["INSTNM"] == university
+                ]
+                st.session_state.uni_data = uni_data
+
+                uni_description = build_university_description(
+                    st.session_state.uni_data
+                )
+
+                st.write(uni_description)
+            else:
+                inst_description = search_institution_description(institution)
+
+                st.write(inst_description)
 
 
 @st.experimental_fragment
@@ -101,14 +119,16 @@ def main():
 
     # get user's input (research interests)
     user_input = st.sidebar.text_area("Describe your research interests:", "...")
-    
+
     if st.session_state.author_profile is not None:
         email_sample = build_cold_email(st.session_state.author_profile)
         print(email_sample)
-        st.sidebar.download_button("Download Email Sample", email_sample, 
-                           file_name=f"{st.session_state['user_choice']}_SampleEmail.txt", key="email_sample")
-            
-            
+        st.sidebar.download_button(
+            "Download Email Sample",
+            email_sample,
+            file_name=f"{st.session_state['user_choice']}_SampleEmail.txt",
+            key="email_sample",
+        )
 
     # Instantiate the classes in the beginning
     search_scholar = SearchScholar()
@@ -146,7 +166,7 @@ def main():
         st.markdown("---")
 
         fragment_function(author_profiles)
-        
+
         if st.session_state.user_choice is not None:
             build_university_profile()
 
