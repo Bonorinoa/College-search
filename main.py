@@ -132,11 +132,11 @@ def main():
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
-        with st.spinner("Parsing authors' profiles..."):
-            formatted_string = json_parser.author_string(
-                author_profiles
-            )  # adds pairs of author-insitution
-            st.success("Authors' profiles parsed successfully!")
+        #with st.spinner("Parsing authors' profiles..."):
+        #    formatted_string = json_parser.author_string(
+        #        author_profiles
+        #    )  # adds pairs of author-insitution
+        #    st.success("Authors' profiles parsed successfully!")
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
 
