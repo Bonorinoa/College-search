@@ -138,3 +138,32 @@ def author_json_to_list(authors_list):
 
 # Function to fetch university admissions data from the database
 ## should take in the institution chosen by the user and return the university admissions data
+@st.cache_data
+def load_admissions_data():
+    # Load the admissions data from the database
+    admissions_data = pd.read_csv("data/Merged_Admissions_Data.csv")
+
+    return admissions_data
+
+def fetch_admissions_data(institution):
+    # Load the admissions data
+    admissions_data = load_admissions_data()
+    
+    llm = load_llm()
+    university = llm.invoke(f"The following string contains the name of an accredited university. Extract the name of the university from the string, if it is abbreviated please expand it to match the legal name: {institution}")
+
+    st.write("The extracted university is:", university.content)
+
+    # Filter the data based on the selected institution
+    try:
+        institution_data = admissions_data[admissions_data["INSTNM"] == university.content]
+        if institution_data.empty:
+            st.warning("No data found for the selected institution.")
+            university = st.text_input("Enter the name of the institution to fetch the data:")
+            institution_data = admissions_data[admissions_data["INSTNM"] == university]
+        
+    except Exception as e:
+        st.warning(f"We couldn't fetch your school: {e}")
+        
+
+    return institution_data

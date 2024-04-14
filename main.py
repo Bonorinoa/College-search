@@ -16,14 +16,20 @@ def fragment_function(parsed_data):
 
     # button to submit the choice
     if st.button("Submit"):
-        st.write("You have submitted the choice")
-        st.balloons()
+        with st.spinner("Fetching data..."):
+            #st.balloons()
 
-        # user_choice is used here to fetch the data from the database or API
-        ## We need information about the author from some public API
-        ## Institution information can be fetched from the database
+            # user_choice is used here to fetch the data from the database or API
+            ## We need information about the author from some public API
+            ## Institution information can be fetched from the database
+            
+            user_choice = user_choice.split(" --- ")
+            author_name = user_choice[0]
+            author_affiliation = user_choice[1]
+            
+            st.dataframe(fetch_admissions_data(author_affiliation))
 
-        st.write("Thank you for using the web app!")
+            #st.write("Thank you for using the web app!")
 
 
 def main():
@@ -83,18 +89,14 @@ def main():
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
 
-        # create list of strings to display in dropdown
-        ## could be pairs of author-institution
-        # parsed_data = [
-        #     "Author 1 - Institution 1",
-        #     "Author 2 - Institution 2",
-        #     "Author 3 - Institution 3",
-        # ]
+
         parsed_data = authors_list
 
         st.markdown("---")
 
         fragment_function(parsed_data)
+        
+        
 
 
 if __name__ == "__main__":
