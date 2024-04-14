@@ -196,7 +196,7 @@ def fetch_admissions_state_data(institution):
             institutions_state_data["INSTNM"].tolist(), institution
         )
 
-        st.write("The 3 universities with the highest cosine similarity are: ")
+        st.write("The 3 universities with the highest similarity are: ")
 
         # build dataframe for top 3 universities
         universities_data = pd.DataFrame()

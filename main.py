@@ -36,7 +36,7 @@ def fragment_function(authors_info):
             prompt = f"""
                     I'm interesting in learning about researchers and research institutions. 
                     Tell me about {chosen_author["name"]} and their research interests, which 
-                    I believe include {chosen_author["interests"]}, as well as their 
+                    I believe include: {chosen_author["interests"]}. Also tell me about their 
                     insitution: {chosen_author["affiliations"]}.
                     """
             paragraph = paragraph_llm.invoke(prompt)
