@@ -194,14 +194,60 @@ def fetch_admissions_state_data(institution):
 
     # Filter the data based on the selected institution
     try:
-        institution_data = admissions_data[admissions_data["STABBR"] == state]
-        if institution_data.empty:
-            st.warning("No data found for the selected institution.")
-            university = st.text_input("Enter the name of the institution to fetch the data:")
-            institution_data = admissions_data[admissions_data["INSTNM"] == university]
-        
+        institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
+
+        university = find_university(institutions_state_data["INSTNM"].tolist(), institution)
+
+        st.write("The university with the highest cosine similarity is:", university)
+
+        university_data = get_university_data(university)
+
+        #st.warning("No universities found in our database for the identifies state.")
+
+    except Exception as e:
+        st.warning(f"We couldn't find schools in this state: {e}")
+
+
+    return university_data
+
+def find_university(state_data, author_institution):
+    '''
+    Takes in the list of universities in a state and returns the university with the highest cosine similarity with the author's institution.
+    inputs:
+        state_data: list of universities in a state
+        author_institution: institution of the author
+    outputs:
+        university: the university with the highest cosine similarity with the author's institution
+    '''
+
+    # Creating the TF-IDF Vectorizer
+    vectorizer = TfidfVectorizer()
+
+    # Including the author's institution in the list for vectorization
+    all_text = state_data + [author_institution]
+
+    # Transforming the text to TF-IDF vectors
+    tfidf_matrix = vectorizer.fit_transform(all_text)
+
+    # Calculating cosine similarity between the author's institution and all universities in the state
+    # The last entry in tfidf_matrix is the author's institution
+    cosine_similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
+
+    # Finding the index of the maximum cosine similarity score
+    max_index = np.argmax(cosine_similarities)
+
+    # Returning the university with the highest cosine similarity
+    return state_data[max_index]
+
+def get_university_data(university):
+    # Load the admissions data
+    admissions_data = load_admissions_data()
+
+    # Filter the data based on the selected institution
+    try:
+        university_data = admissions_data[admissions_data["INSTNM"] == university]
+
     except Exception as e:
         st.warning(f"We couldn't fetch your school: {e}")
-        
 
-    return institution_data
+    return university_data
