@@ -83,9 +83,10 @@ class SearchScholar:
 
     def author_profiles(self, authors_info):
 
-        author_profiles = [
-            {"name": "", "affiliations": "", "website": "", "interests": []}
-        ]
+        # author_profiles = [
+        #     {"name": "", "affiliations": "", "website": "", "interests": []}
+        # ]
+        author_profiles = []
 
         for author in authors_info:
             params = {
@@ -129,7 +130,8 @@ class JSONParser:
     # Function to get author information from the JSON data
     ## will still return json, but just of the authors
     def extract_authors(self, json_data):
-        authors_info = [{"name": "", "author_id": ""}]
+        # authors_info = [{"name": "", "author_id": ""}]
+        authors_info = []
 
         # Iterate through each paper
         for entry in json_data:
@@ -157,9 +159,9 @@ class JSONParser:
         # Iterate through authors to add a 'parsed_string' trait
         for author in author_profiles:
             formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
-            # author["parsed_string"] = formatted_str
+            author["parsed_string"] = formatted_str
 
-        return formatted_str
+        return author_profiles
 
 
 def build_author_description(author_profile):
@@ -204,7 +206,25 @@ def build_university_description(university_data):
             
             Please provide a detailed and factual (based on provided data) description of the university.
             The target audience are undergraduate and graduate students looking to learn about admissions criteria and relevant links.
-            The description should be informative and copmrehensive.
+            The description should be informative and comprehensive.
+            """
+
+    description = llm.invoke(prompt)
+
+    return description.content
+
+
+def search_institution_description(institution):
+    llm = load_llm(max_tokens=450, temperature=0.85)
+
+    prompt = f"""
+            The following information contains the name of an institution.\n\n
+            
+            Institution: {institution}\n
+            
+            Please provide a detailed and factual description of the university.
+            The target audience are undergraduate and graduate students looking to learn about admissions criteria and relevant links.
+            The description should be informative and comprehensive.
             """
 
     description = llm.invoke(prompt)
@@ -277,19 +297,24 @@ def fetch_admissions_state_data(institution):
         institutions_list = admissions_data[admissions_data["STABBR"] == state][
             "INSTNM"
         ].tolist()
+
+        # Find top 3 similarity
+        top3_universities = find_university(institutions_list, institution)
+
+        # Build dataframe for top 3 universities
+        universities_data = pd.DataFrame()
+        for university in top3_universities:
+            university_data = get_university_data(university)
+            universities_data = pd.concat([universities_data, university_data])
     else:
-        institutions_list = admissions_data["INSTNM"].tolist()
+        st.write(
+            """WARNING: We currently don't support international universities and are unable to fetch statistics at this time.
+            However, we will perform an information search on the institution you provided.
+            """
+        )
+        universities_data = pd.DataFrame()
 
-    # Find top 3 similarity
-    top3_universities = find_university(institutions_list, institution)
-
-    # Build dataframe for top 3 universities
-    universities_data = pd.DataFrame()
-    for university in top3_universities:
-        university_data = get_university_data(university)
-        universities_data = pd.concat([universities_data, university_data])
-
-    return universities_data
+    return universities_data, institution
 
 
 def find_university(state_data, author_institution):
