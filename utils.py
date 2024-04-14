@@ -139,6 +139,7 @@ class JSONParser:
 
     # Function to parse authors' informatin from the JSON data
     ## should return a list of strings that can be displayed in the dropdown menu
+    @st.cache_data
     def author_json_to_list(self, authors_list):
         formatted_list = []
 
