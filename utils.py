@@ -82,6 +82,13 @@ class SearchScholar:
         return results, organic_results
 
     def author_profiles(self, authors_info):
+        
+        author_profiles = [{
+                            "name": "",
+                            "affiliations": "",
+                            "interests": []
+                            }]
+        
         for author in authors_info:
             params = {
                 "engine": "google_scholar_author",
@@ -94,17 +101,17 @@ class SearchScholar:
                 search = GoogleSearch(params)
                 results = search.get_dict()
                 author_data = results.get("author", {})
-                author["affiliations"] = author_data.get(
-                    "affiliations", "No Affiliation Found"
-                )
-                # Extracting interests (could be multiple)
-                interests = author_data.get("interests", [])
-                author["interests"] = [interest["title"] for interest in interests]
+                
+                author_profiles.append({
+                    "name": author.get("name", "No Name Found"), # "name": "No Name Found
+                    "affiliations": author_data.get("affiliations", "No Affiliation Found"),
+                    "interests": author_data.get("interests", [])
+                })
+                
             except Exception as e:
-                print(f"Failed to fetch information for author {author['name']}: {e}")
-                author["affiliations"] = "No profile found"
+                st.warning(f"Couldn't fetch author's profile: {e}")
 
-        return authors_info
+        return author_profiles
 
 
 # Class to parse JSON combining the functions below
@@ -117,40 +124,87 @@ class JSONParser:
     # Function to get author information from the JSON data
     ## will still return json, but just of the authors
     def extract_authors(self, json_data):
-        authors_info = []
+        authors_info = [{
+                            "name": "",
+                            "author_id": ""
+                        }]
 
         # Iterate through each paper
         for entry in json_data:
-            publication_info = entry.get("publication_info", {})
-            authors = publication_info.get("authors", [])
-
-            # Iterate through each author in the paper
-            for author in authors:
-                # Desired information to extract
-                author_details = {
-                    "name": author.get("name", "No Name Provided"),
-                    "link": author.get("link", "No Link Provided"),
-                    "serpapi_scholar_link": author.get(
-                        "serpapi_scholar_link", "No SerpApi Link Provided"
-                    ),
-                    "author_id": author.get("author_id", "No Author ID Provided"),
-                }
-                # Add author info
-                authors_info.append(author_details)
-
-        return authors_info
-
+            
+            authors = entry.get('publication_info', "No publications").get("authors", "no authors")
+        
+            if authors != "no authors":
+                for author in authors[:2]:
+                    authors_info.append({
+                        "name": author.get("name", "No Name Found"),
+                        "author_id": author.get("author_id", "No ID Found")
+                    })
+                    
+        return authors_info   
+        
+        
     # Function to parse authors' information from the JSON data
     ## should add a string description for each author that can be displayed in the dropdown menu
     # @staticmethod
     # @st.cache_data
-    def author_string(self, authors_info):
+    def author_string(self, author_profiles):
         # Iterate through authors to add a 'parsed_string' trait
-        for author in authors_info:
+        for author in author_profiles:
             formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
-            author["parsed_string"] = formatted_str
+            #author["parsed_string"] = formatted_str
 
-        return authors_info
+        return formatted_str
+    
+    
+def build_author_description(author_profile):
+    llm = load_llm(max_tokens=100, 
+                   temperature=0.75)
+    
+    prompt = f"""
+            The following information contains the name of an author, interests, and their affiliations.\n\n
+            
+            Name: {author_profile['name']}\n
+            Affiliations: {author_profile['affiliations']}\n
+            Interests: {author_profile['interests']}\n\n
+            
+            Please provide a brief description of the author's research interests and affiliations. 
+            The target audience are undergraduate and graduate students.
+            The description should be informative.
+            """
+            
+    description = llm.invoke(prompt)
+    
+    return description.content
+
+
+def build_university_description(university_data):
+    llm = load_llm(max_tokens=150, 
+                   temperature=0.75)
+    
+    prompt = f"""
+            The following information contains the name of a university, its admissions data, and other relevant information.\n\n
+            
+            Name: {university_data['INSTNM']}\n
+            Website: {university_data['WEBADDR']}\n
+            Admissions website: {university_data['ADMINURL']}\n
+            Funding website: {university_data['FAIDURL']}\n
+            Disability services website: {university_data['DISAURL']}\n
+            Highest degree offered: {university_data['HLOFFER']}\n
+            SAT Math 75th percentile: {university_data['SATMT75']}\n
+            SAT Reading 75th percentile: {university_data['SATVR75']}\n
+            ACT 75th percentile: {university_data['ACTCM75']}\n
+            Applicants in 2022: {university_data['APPLCN']}\n
+            Admitted in 2022: {university_data['ADMSSN']}\n\n
+            
+            Please provide a brief description of the university's admissions data and other relevant information.
+            The target audience are undergraduate and graduate students.
+            The description should be informative and copmrehensive.
+            """
+            
+    description = llm.invoke(prompt)
+    
+    return description.content
 
 
 # Function to fetch university admissions data from the database
@@ -164,7 +218,8 @@ def load_admissions_data():
 
 
 def extract_state_universities(institution):
-    llm = load_llm(max_tokens=15, temperature=0.5)
+    llm = load_llm(max_tokens=2, 
+                   temperature=0.5)
 
     prompt = f"""
             The following string contains the name of an accredited university.

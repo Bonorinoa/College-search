@@ -1,20 +1,25 @@
 import streamlit as st
 from time import sleep
-import re
 
 from utils import *
 
 
+if "user_choice" not in st.session_state:
+    st.session_state.user_choice = None
+
 # streamlit fragment functions
 @st.experimental_fragment
-def fragment_function(authors_info):
+def fragment_function(author_profiles):
     # dropdown is populated with the parsed data
     st.markdown("## Select the author-institution pair")
+    
+    pairs = []
+    for author in author_profiles:
+        formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
+        pairs.append(formatted_str)
 
-    # get 'parsed_string' from the authors_info for the dropdown
-    parsed_data = [author["parsed_string"] for author in authors_info]
-
-    user_choice = st.selectbox("Author-Institution Pair", parsed_data)
+    user_choice = st.selectbox("Author-Institution Pair", pairs)
+    st.session_state.user_choice = user_choice
 
     st.write(f"User choice: {user_choice}")
 
@@ -24,22 +29,41 @@ def fragment_function(authors_info):
             # st.balloons()
 
             # map the user choice to the author
-            ## index 0 in case there are multiple
-            chosen_author = [
-                author
-                for author in authors_info
-                if author["parsed_string"] == user_choice
-            ][0]
-
-            st.write(f"Chosen author: {chosen_author}")
-
-            author_affiliation = user_choice.split(" --- ")[1]
-            author_affiliation = re.sub(r"\s+", " ", author_affiliation).strip()
-            st.write(f"Author affiliation: {author_affiliation}")
-
+            author_name = user_choice.split(" --- ")[0]
+            
+            # get profile for the author
+            for author in author_profiles:
+                if author['name'] == author_name:
+                    author_profile = author
+            
+            if author_profile is not None:
+                description = build_author_description(author_profile)
+            
+                st.write(description)
+                
+def build_university_profile():
+    
+    if st.button("Show University Data"):
+        
+        with st.spinner("Fetching data..."):
+            author_affiliation = st.session_state.user_choice.split(" --- ")[1]
+    
+            # dataframe
             universities_data = fetch_admissions_state_data(author_affiliation)
-
-            st.dataframe(universities_data)
+            
+            university = find_university(universities_data["INSTNM"].tolist(), author_affiliation)[0]
+            
+            st.write(f"Selected University: {university}")
+            
+            # get university data for selected affiliation
+            uni_data = universities_data.loc[universities_data['INSTNM'] == university]
+            st.dataframe(uni_data)
+                        
+            uni_description = build_university_description(uni_data)
+            
+            st.write(uni_description)
+           
+            
 
 
 @st.experimental_fragment
@@ -88,13 +112,13 @@ def main():
 
         # add info from google scholar profiles
         with st.spinner("Fetching authors' profiles..."):
-            authors_info = search_scholar.author_profiles(authors_info)
+            author_profiles = search_scholar.author_profiles(authors_info)
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
         with st.spinner("Parsing authors' profiles..."):
-            authors_info = json_parser.author_string(
-                authors_info
+            formatted_string = json_parser.author_string(
+                author_profiles
             )  # adds pairs of author-insitution
             st.success("Authors' profiles parsed successfully!")
 
@@ -105,7 +129,10 @@ def main():
 
         st.markdown("---")
 
-        fragment_function(authors_info)
+        fragment_function(author_profiles)
+        
+        if st.session_state.user_choice is not None:
+            build_university_profile()
 
         # fetch_institution_data()
 
