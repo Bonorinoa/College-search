@@ -101,6 +101,43 @@ class SearchScholar:
         return authors_list
 
 
+# Class to parse JSON combining the functions below
+## parse entire JSON to authors json
+## parse authors json to list
+class JSONParser:
+    def __init__(self):
+        pass
+
+    def extract_author_json(self, json_data):
+        authors_info = []
+
+        for entry in json_data:
+            publication_info = entry.get("publication_info", {})
+            authors = publication_info.get("authors", [])
+
+            for author in authors:
+                author_details = {
+                    "name": author.get("name", "No Name Provided"),
+                    "link": author.get("link", "No Link Provided"),
+                    "serpapi_scholar_link": author.get(
+                        "serpapi_scholar_link", "No SerpApi Link Provided"
+                    ),
+                    "author_id": author.get("author_id", "No Author ID Provided"),
+                }
+                authors_info.append(author_details)
+
+        return authors_info
+
+    def author_json_to_list(self, authors_list):
+        formatted_list = []
+
+        for author in authors_list:
+            formatted_str = f"{author['name']} --- {author['affiliations']}"
+            formatted_list.append(formatted_str)
+
+        return formatted_list
+
+
 # Function to get author information from the JSON data
 ## will still return json, but just of the authors
 def extract_author_json2(json_data):
