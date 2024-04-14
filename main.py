@@ -36,11 +36,10 @@ def fragment_function(authors_info):
                 "affiliations", "No Affiliation Found"
             )
 
-            university_data = fetch_admissions_state_data(author_affiliation)
-
-            st.dataframe(university_data)
-
-            # st.write("Thank you for using the web app!")
+            universities_data = fetch_admissions_state_data(author_affiliation)
+           
+            st.dataframe(universities_data)
+            
 
 
 @st.experimental_fragment
