@@ -82,7 +82,7 @@ class SearchScholar:
         return results, organic_results
 
     def author_profiles(self, authors_info):
-        for author in authors_info:
+        for author in authors_info[:1]:
             params = {
                 "engine": "google_scholar_author",
                 "api_key": os.getenv("SERP_API_KEY"),
@@ -164,7 +164,7 @@ def load_admissions_data():
 
 
 def extract_state_universities(institution):
-    llm = load_llm(max_tokens=15, temperature=0.5)
+    llm = load_llm(max_tokens=2, temperature=0.5)
 
     prompt = f"""
             The following string contains the name of an accredited university.
@@ -186,7 +186,7 @@ def fetch_admissions_state_data(institution):
     admissions_data = load_admissions_data()
 
     state = extract_state_universities(institution)
-    st.write("The extracted state is:", repr(state))
+    # st.write("The extracted state is:", repr(state))
 
     # Filter the data based on the selected institution
     try:

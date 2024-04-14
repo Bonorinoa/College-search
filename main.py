@@ -31,11 +31,21 @@ def fragment_function(authors_info):
                 if author["parsed_string"] == user_choice
             ][0]
 
-            st.write(f"Chosen author: {chosen_author}")
+            # Call chat to get description of the author and their institution
+            paragraph_llm = load_llm(max_tokens=200, temperature=0.5)
+            prompt = f"""
+                    I'm interesting in learning about researchers and research institutions. 
+                    Tell me about {chosen_author["name"]} and their research interests, which 
+                    I believe include {chosen_author["interests"]}, as well as their 
+                    insitution: {chosen_author["affiliations"]}.
+                    """
+            paragraph = paragraph_llm.invoke(prompt)
+            st.write(paragraph.content)
 
-            author_affiliation = user_choice.split(" --- ")[1]
-            author_affiliation = re.sub(r"\s+", " ", author_affiliation).strip()
-            st.write(f"Author affiliation: {author_affiliation}")
+            # get the author's affiliation
+            author_affiliation = chosen_author.get(
+                "affiliations", "No Affiliation Found"
+            )
 
             universities_data = fetch_admissions_state_data(author_affiliation)
 
