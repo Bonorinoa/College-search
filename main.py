@@ -83,23 +83,12 @@ def main():
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
 
-<<<<<<< HEAD
-
-        parsed_data = authors_list
-
-        st.markdown("---")
-
-        fragment_function(parsed_data)
-        
-        
-=======
         # create list of strings to display in dropdown
         ## could be pairs of author-institution
 
         st.markdown("---")
 
         fragment_function(authors_list)
->>>>>>> 7078b3cc17ec4f0925153bdc8af5a041c81f43c8
 
 
 if __name__ == "__main__":
