@@ -49,19 +49,60 @@ def load_llm(provider="openai", max_tokens=100, temperature=0.5):
     return llm
 
 
-# Function to fetch google scholar papers
-## should return a list of JSON objects that have the key "authors"
-def search_scholar(params):
+# Class to search google scholar
+## query function for searching papers
+## user function for searching authors
+## returns JSON objects
+class SearchScholar:
+    def __init__(self):
+        self.api_key = os.getenv("SERP_API_KEY")
+        if not self.api_key:
+            raise ValueError("SERP_API_KEY is not set in environment variables.")
 
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    organic_results = results["organic_results"]
+    def query(self, query, as_ylo=2018, as_yhi=2024, start=0, num=10):
+        params = {
+            "engine": "google_scholar",
+            "api_key": self.api_key,
+            "q": query,
+            "as_ylo": as_ylo,
+            "as_yhi": as_yhi,
+            "hl": "en",
+            "start": start,
+            "num": num,  # limited to 20
+            "output": "json",
+        }
 
-    return results, organic_results
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        organic_results = results.get("organic_results", [])
+
+        return results, organic_results
+
+    def user(self, authors_list):
+        for author in authors_list:
+            params = {
+                "engine": "google_scholar_author",
+                "api_key": self.api_key,
+                "author_id": author["author_id"],
+                "output": "json",
+            }
+
+            try:
+                search = GoogleSearch(params)
+                results = search.get_dict()
+                author_data = results.get("author", {})
+                author["affiliations"] = author_data.get(
+                    "affiliations", "No Affiliation Found"
+                )
+            except Exception as e:
+                print(f"Failed to fetch information for author {author['name']}: {e}")
+                author["affiliations"] = "No profile found"
+
+        return authors_list
 
 
-# Function to fetch the authors' google scholar profiles
-## should return a list of JSON objects that we can parse to get the authors' institutions and research interests
+# Function to get author information from the JSON data
+## will still return json, but just of the authors
 def extract_author_json2(json_data):
     # Initialize a list to hold the authors' information
     authors_info = []
@@ -89,43 +130,8 @@ def extract_author_json2(json_data):
     return authors_info
 
 
-def search_scholar_author(authors_list):
-    api_key = os.getenv("SERP_API_KEY")
-    if not api_key:
-        raise ValueError("SERP_API_KEY is not set in environment variables.")
-
-    for author in authors_list:
-        params = {
-            "engine": "google_scholar_author",
-            "author_id": author["author_id"],
-            "api_key": api_key,
-        }
-
-        try:
-            search = GoogleSearch(params)
-            results = search.get_dict()
-
-            # Accessing 'author' key from the results based on the provided structure
-            author_data = results.get("author", {})
-            # print(author_data)
-
-            # Extracting 'affiliations' from the author_data (maybe email later)
-            author["affiliations"] = author_data.get(
-                "affiliations", "No Affiliation Found"
-            )
-
-        except Exception as e:
-            print(f"Failed to fetch information for author {author['name']}: {e}")
-            # Set default values in case of failure to fetch data
-            author["affiliations"] = "No profile found"
-
-    return authors_list
-
-
 # Function to parse authors' institutions and research interests
 ## should return a list of strings that can be displayed in the dropdown menu
-
-
 def author_json_to_list(authors_list):
     formatted_list = []
 
