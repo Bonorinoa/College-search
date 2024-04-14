@@ -159,9 +159,9 @@ class JSONParser:
         # Iterate through authors to add a 'parsed_string' trait
         for author in author_profiles:
             formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
-            # author["parsed_string"] = formatted_str
+            author["parsed_string"] = formatted_str
 
-        return formatted_str
+        return authors_profiles
 
 
 def build_author_description(author_profile):
@@ -312,7 +312,7 @@ def fetch_admissions_state_data(institution):
             However, we will perform an information search on the institution you provided.
             """
         )
-        universities_data = None
+        universities_data = pd.DataFrame()
 
     return universities_data, institution
 

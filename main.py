@@ -65,7 +65,7 @@ def build_university_profile():
                 author_affiliation
             )
 
-            if universities_data:
+            if universities_data.shape[0] > 0:
                 st.write("Top 3 matches:")
                 st.dataframe(universities_data)
 
@@ -153,9 +153,6 @@ def main():
 
         # get authors' institutions and research interests
         with st.spinner("Parsing authors' profiles..."):
-            formatted_string = json_parser.author_string(
-                author_profiles
-            )  # adds pairs of author-insitution
             st.success("Authors' profiles parsed successfully!")
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
