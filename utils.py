@@ -241,7 +241,7 @@ def fetch_admissions_state_data(institution):
     admissions_data = load_admissions_data()
 
     state = extract_state_universities(institution)
-    st.write("The extracted state is:", repr(state))
+    # st.write("The extracted state is:", repr(state))
 
     # Filter the data based on the selected institution
     try:
@@ -251,7 +251,7 @@ def fetch_admissions_state_data(institution):
             institutions_state_data["INSTNM"].tolist(), institution
         )
 
-        st.write("The 3 universities with the highest cosine similarity are: ")
+        st.write("The 3 universities with the highest similarity are: ")
 
         # build dataframe for top 3 universities
         universities_data = pd.DataFrame()
