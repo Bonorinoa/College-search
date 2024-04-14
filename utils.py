@@ -83,8 +83,8 @@ class SearchScholar:
 
         return results, organic_results
 
-    def user(self, authors_list):
-        for author in authors_list:
+    def author_profiles(self, authors_info):
+        for author in authors_info:
             params = {
                 "engine": "google_scholar_author",
                 "api_key": self.api_key,
@@ -106,7 +106,7 @@ class SearchScholar:
                 print(f"Failed to fetch information for author {author['name']}: {e}")
                 author["affiliations"] = "No profile found"
 
-        return authors_list
+        return authors_info
 
 
 # Class to parse JSON combining the functions below
@@ -118,7 +118,7 @@ class JSONParser:
 
     # Function to get author information from the JSON data
     ## will still return json, but just of the authors
-    def extract_author_json(self, json_data):
+    def extract_authors(self, json_data):
         authors_info = []
 
         # Iterate through each paper
@@ -142,19 +142,17 @@ class JSONParser:
 
         return authors_info
 
-    # Function to parse authors' informatin from the JSON data
-    ## should return a list of strings that can be displayed in the dropdown menu
+    # Function to parse authors' information from the JSON data
+    ## should add a string description for each author that can be displayed in the dropdown menu
     @staticmethod
     @st.cache_data
-    def author_json_to_list(authors_list):
-        formatted_list = []
+    def author_string(authors_info):
+        # Iterate through authors to add a 'parsed_string' trait
+        for author in authors_info:
+            formatted_str = f"{author['name']} --- {author.get('affiliations', 'No Affiliation Found')}"
+            author["parsed_string"] = formatted_str
 
-        # Iterate through authors for name, affliation, and research interests
-        for author in authors_list:
-            formatted_str = f"{author['name']} --- {author['affiliations']}"
-            formatted_list.append(formatted_str)
-
-        return formatted_list
+        return authors_info
 
 
 # Function to fetch university admissions data from the database
@@ -165,6 +163,7 @@ def load_admissions_data():
     admissions_data = pd.read_csv("data/Merged_Admissions_Data.csv")
 
     return admissions_data
+
 
 def extract_state_universities(institution):
     llm = load_llm(max_tokens=15, temperature=0.5)
@@ -184,41 +183,44 @@ def extract_state_universities(institution):
 
     return state.content
 
+
 def fetch_admissions_state_data(institution):
     # Load the admissions data
     admissions_data = load_admissions_data()
-    
+
     state = extract_state_universities(institution)
-    
+
     st.write("The extracted state is:", state)
 
     # Filter the data based on the selected institution
     try:
         institutions_state_data = admissions_data[admissions_data["STABBR"] == state]
 
-        university = find_university(institutions_state_data["INSTNM"].tolist(), institution)
+        university = find_university(
+            institutions_state_data["INSTNM"].tolist(), institution
+        )
 
         st.write("The university with the highest cosine similarity is:", university)
 
         university_data = get_university_data(university)
 
-        #st.warning("No universities found in our database for the identifies state.")
+        # st.warning("No universities found in our database for the identifies state.")
 
     except Exception as e:
         st.warning(f"We couldn't find schools in this state: {e}")
 
-
     return university_data
 
+
 def find_university(state_data, author_institution):
-    '''
+    """
     Takes in the list of universities in a state and returns the university with the highest cosine similarity with the author's institution.
     inputs:
         state_data: list of universities in a state
         author_institution: institution of the author
     outputs:
         university: the university with the highest cosine similarity with the author's institution
-    '''
+    """
 
     # Creating the TF-IDF Vectorizer
     vectorizer = TfidfVectorizer()
@@ -238,6 +240,7 @@ def find_university(state_data, author_institution):
 
     # Returning the university with the highest cosine similarity
     return state_data[max_index]
+
 
 def get_university_data(university):
     # Load the admissions data

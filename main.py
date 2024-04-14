@@ -6,43 +6,54 @@ from utils import *
 
 # streamlit fragment functions
 @st.experimental_fragment
-def fragment_function(parsed_data):
+def fragment_function(authors_info):
     # dropdown is populated with the parsed data
     st.markdown("## Select the author-institution pair")
+
+    # get 'parsed_string' from the authors_info for the dropdown
+    parsed_data = [author["parsed_string"] for author in authors_info]
 
     user_choice = st.selectbox("Author-Institution Pair", parsed_data)
 
     st.write(f"User choice: {user_choice}")
 
     # button to submit the choice
-    if st.button("Get univesities in state"):
+    if st.button("Make Selection"):
         with st.spinner("Fetching data..."):
             # st.balloons()
 
-            # user_choice is used here to fetch the data from the database or API
-            ## We need information about the author from some public API
-            ## Institution information can be fetched from the database
+            # map the user choice to the author
+            ## index 0 in case there are multiple
+            chosen_author = [
+                author
+                for author in authors_info
+                if author["parsed_string"] == user_choice
+            ][0]
 
-            user_choice = user_choice.split(" --- ")
-            author_name = user_choice[0]
-            author_affiliation = user_choice[1]
+            st.write(f"Chosen author: {chosen_author}")
+
+            author_affiliation = chosen_author.get(
+                "affiliations", "No Affiliation Found"
+            )
 
             university_data = fetch_admissions_state_data(author_affiliation)
-           
+
             st.dataframe(university_data)
-            
+
             # st.write("Thank you for using the web app!")
+
 
 @st.experimental_fragment
 def fetch_institution_data():
-    
+
     university = st.text_input("Enter the name of the institution to fetch the data:")
-    
+
     if st.button("Get univesity admissions data"):
         with st.spinner("Fetching data..."):
-        
+
             uni_data = get_university_data(university)
             st.dataframe(uni_data)
+
 
 def main():
 
@@ -71,21 +82,21 @@ def main():
             # Perform a query search
             results, organic_results = search_scholar.query(user_input)
 
-        # get papers with key "authors"
+        # get author's info from papers
         with st.spinner("Fetching authors..."):
-            authors_json = json_parser.extract_author_json(organic_results)
+            authors_info = json_parser.extract_authors(organic_results)
             st.success("Authors fetched successfully!")
 
-        # find authors' google scholar profiles
+        # add info from google scholar profiles
         with st.spinner("Fetching authors' profiles..."):
-            authors_info = search_scholar.user(authors_json)
+            authors_info = search_scholar.author_profiles(authors_info)
             st.success("Authors' profiles fetched successfully!")
 
         # get authors' institutions and research interests
         with st.spinner("Parsing authors' profiles..."):
-            authors_list = json_parser.author_json_to_list(
+            authors_info = json_parser.author_string(
                 authors_info
-            )  # pairs of author-insitution
+            )  # adds pairs of author-insitution
             st.success("Authors' profiles parsed successfully!")
 
         ## CACHE THE RESULTS CREATED UP TO THIS POINT
@@ -95,9 +106,9 @@ def main():
 
         st.markdown("---")
 
-        fragment_function(authors_list)
-        
-        #fetch_institution_data()
+        fragment_function(authors_info)
+
+        # fetch_institution_data()
 
 
 if __name__ == "__main__":
